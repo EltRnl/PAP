@@ -75,37 +75,56 @@ void sequential_merge_sort(uint64_t *T, const uint64_t size)
 
 void parallel_merge_sort(uint64_t *T, const uint64_t size)
 {
-	/*
-	if (size < 2)
+	if (size <= 64){
+		sequential_merge_sort(T,size);
 		return;
-#pragma omp parallel
-#pragma omp single
-	{
-		uint64_t subsize = size / 2;
-	#pragma omp task depend(inout: T)
-		parallel_merge_sort(T, subsize);
-	#pragma omp task depend(inout: T)
-		parallel_merge_sort(T + subsize, subsize);
-	#pragma omp taskwait
-		merge(T, subsize);
 	}
-*/
-#pragma omp parallel
-#pragma omp single
+
+	#pragma omp parallel
 	{
-		for(int i=2; i<=size; i*=2){
-			for(int j=0; j<size; j+=i){
-				if(i<=32){
-					merge(T+j,i/2);
-					continue;
+		#pragma omp single
+		{
+			uint64_t subsize = size / 2;
+		#pragma omp task depend(inout: T)
+			{parallel_merge_sort(T, subsize);}
+		#pragma omp task depend(inout: T)
+			{parallel_merge_sort(T + subsize, subsize);}
+		#pragma omp taskwait
+			merge(T, subsize);
+		}
+	}
+	
+}
+
+/*
+void parallel_merge_sort(uint64_t *T, const uint64_t size)
+{
+	int threashold = 64;
+	if (size <= threashold){
+		sequential_merge_sort(T,size);
+		return;
+	}
+	#pragma omp parallel
+	{
+		#pragma omp single
+		{
+			for(int i=threashold; i<=size; i*=2){
+				#pragma omp taskwait
+				for(int j=0; j<size; j+=i){
+					#pragma omp task depend(inout: T)
+					{
+						if(i<=threashold){
+							sequential_merge_sort(T+j,i);
+						}else{
+							merge(T+j,i/2);
+						}
+					}
 				}
-	#pragma omp task
-				merge(T+j,i/2);
 			}
-	#pragma omp taskwait
 		}
 	}
 }
+*/
 
 int main(int argc, char **argv)
 {

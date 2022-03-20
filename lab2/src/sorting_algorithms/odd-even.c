@@ -9,23 +9,67 @@
 
 #include "sorting.h"
 
+void swap(uint64_t *a, uint64_t *b)
+{
+    uint64_t tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
 /* 
    odd-even sort -- sequential, parallel -- 
 */
 
 void sequential_oddeven_sort(uint64_t *T, const uint64_t size)
 {
-    /* TODO: sequential implementation of odd-even sort */
-
-    return;
+    uint8_t sorted;
+    do
+    {
+        sorted = 1;
+        for (int i = 0; i < size - 1; i+=2)
+        {
+            if (T[i] > T[i + 1])
+            {
+                swap(T + i, T + i + 1);
+                sorted = 0;
+            }
+        }
+        for (int i = 1; i < size - 1; i+=2)
+        {
+            if (T[i] > T[i + 1])
+            {
+                swap(T + i, T + i + 1);
+                sorted = 0;
+            }
+        }
+    } while (!sorted);
 }
 
 void parallel_oddeven_sort(uint64_t *T, const uint64_t size)
 {
-
-    /* TODO: parallel implementation of odd-even sort */
-
-    return;
+    uint8_t sorted;
+    do
+    {
+        sorted = 1;
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < size - 1; i+=2)
+        {
+            if (T[i] > T[i + 1])
+            {
+                swap(T + i, T + i + 1);
+                sorted = 0;
+            }
+        }
+#pragma omp parallel for schedule(static)
+        for (int i = 1; i < size - 1; i+=2)
+        {
+            if (T[i] > T[i + 1])
+            {
+                swap(T + i, T + i + 1);
+                sorted = 0;
+            }
+        }
+    } while (!sorted);
 }
 
 int main(int argc, char **argv)
@@ -90,7 +134,7 @@ int main(int argc, char **argv)
 #endif
     }
 
-    printf("\n odd-even serial \t\t\t %.3lf seconds\n\n", average_time());
+    printf("\n odd-even serial \t\t\t %.6lf seconds\n\n", average_time());
 
     for (exp = 0; exp < NBEXPERIMENTS; exp++)
     {
@@ -129,7 +173,7 @@ int main(int argc, char **argv)
 #endif
     }
 
-    printf("\n odd-even parallel \t\t\t %.3lf seconds\n\n", average_time());
+    printf("\n odd-even parallel \t\t\t %.6lf seconds\n\n", average_time());
 
     /* print_array (X, N) ; */
 

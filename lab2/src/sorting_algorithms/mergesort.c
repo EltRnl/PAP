@@ -96,8 +96,8 @@ void parallel_merge_sort(uint64_t *T, const uint64_t size)
 	
 }
 
-/*
-void parallel_merge_sort(uint64_t *T, const uint64_t size)
+
+void parallel_merge_sort_iter(uint64_t *T, const uint64_t size)
 {
 	int threashold = 64;
 	if (size <= threashold){
@@ -124,7 +124,7 @@ void parallel_merge_sort(uint64_t *T, const uint64_t size)
 		}
 	}
 }
-*/
+
 
 int main(int argc, char **argv)
 {
@@ -146,12 +146,12 @@ int main(int argc, char **argv)
 	printf("%d",atoi(argv[1]));
 	/* the array to be sorted */
 	uint64_t *X = (uint64_t *)malloc(N * sizeof(uint64_t));
-/*
+
 	//printf("--> Sorting an array of size %lu\n", N);
 #ifdef RINIT
 	//printf("--> The array is initialized randomly\n");
 #endif
-
+/*
 	for (exp = 0; exp < NBEXPERIMENTS; exp++)
 	{
 #ifdef RINIT
@@ -188,10 +188,10 @@ int main(int argc, char **argv)
 		}
 #endif
 	}
-
+*/
 	//printf("\n mergesort serial \t\t\t %.6lf seconds\n\n", average_time());
 	printf(";%.3lf",1000*average_time());
-*/
+
 	for (exp = 0; exp < NBEXPERIMENTS; exp++)
 	{
 #ifdef RINIT
@@ -231,6 +231,49 @@ int main(int argc, char **argv)
 
 	//printf("\n mergesort parallel \t\t\t %.6lf seconds\n\n", average_time());
 	printf(";%.3lf",1000*average_time());
+
+
+	for (exp = 0; exp < NBEXPERIMENTS; exp++)
+	{
+#ifdef RINIT
+		init_array_random(X, N);
+#else
+		init_array_sequence(X, N);
+#endif
+
+		clock_gettime(CLOCK_MONOTONIC, &begin);
+
+		parallel_merge_sort_iter(X, N);
+
+		clock_gettime(CLOCK_MONOTONIC, &end);
+
+		seconds = end.tv_sec - begin.tv_sec;
+		nanoseconds = end.tv_nsec - begin.tv_nsec;
+
+		experiments[exp] = seconds + nanoseconds * 1e-9;
+
+		/* verifying that X is properly sorted */
+#ifdef RINIT
+		if (!is_sorted(X, N))
+		{
+			print_array(X, N);
+			fprintf(stderr, "ERROR: the parallel sorting of the array failed\n");
+			exit(-1);
+		}
+#else
+		if (!is_sorted_sequence(X, N))
+		{
+			print_array(X, N);
+			fprintf(stderr, "ERROR: the parallel sorting of the array failed\n");
+			exit(-1);
+		}
+#endif
+	}
+
+	//printf("\n mergesort parallel \t\t\t %.6lf seconds\n\n", average_time());
+	printf(";%.3lf",1000*average_time());
+
+
 	/* print_array (X, N) ; */
 
 	/* before terminating, we run one extra test of the algorithm */

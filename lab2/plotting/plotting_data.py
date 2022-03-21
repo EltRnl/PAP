@@ -3,6 +3,8 @@ import pandas as pd
 import argparse
 import os
 import sys
+from matplotlib.ticker import MultipleLocator
+
 
 parser = argparse.ArgumentParser()
 
@@ -26,8 +28,8 @@ ax = data.plot(x=data.columns[0], marker='o', xticks=data.iloc[:,0])
 # Set the bottom value to 0 for the Y axes
 ax.set_ylim(bottom=0)
 
-ax.set_xlabel('Problem size', fontsize='x-large')
-ax.set_ylabel('Execution Time', fontsize='x-large')
+ax.set_xlabel('Problem size (2^)', fontsize='x-large')
+ax.set_ylabel('Execution Time (ms)', fontsize='x-large')
 
 # setting font sizes
 ax.legend(fontsize='x-large')

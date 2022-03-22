@@ -89,15 +89,15 @@ int main(int argc, char **argv)
     }
 
     uint64_t N = 1 << (atoi(argv[1]));
-    printf("%d",atoi(argv[1]));
+    //printf("%d",atoi(argv[1]));
     /* the array to be sorted */
     uint64_t *X = (uint64_t *)malloc(N * sizeof(uint64_t));
 
-    //printf("--> Sorting an array of size %lu\n", N);
+    printf("--> Sorting an array of size %lu\n", N);
 #ifdef RINIT
-    //printf("--> The array is initialized randomly\n");
+    printf("--> The array is initialized randomly\n");
 #endif
-/*
+
     for (exp = 0; exp < NBEXPERIMENTS; exp++)
     {
 #ifdef RINIT
@@ -135,9 +135,9 @@ int main(int argc, char **argv)
 #endif
     }
 
-    //printf("\n odd-even serial \t\t\t %.6lf seconds\n\n", average_time());
-    printf(";%.3lf",1000*average_time());
-*/
+    printf("\n odd-even serial \t\t\t %.6lf seconds\n\n", average_time());
+    //printf(";%.3lf",1000*average_time());
+
     for (exp = 0; exp < NBEXPERIMENTS; exp++)
     {
 #ifdef RINIT
@@ -175,8 +175,8 @@ int main(int argc, char **argv)
 #endif
     }
 
-    //printf("\n odd-even parallel \t\t\t %.6lf seconds\n\n", average_time());
-    printf(";%.3lf",1000*average_time());
+    printf("\n odd-even parallel \t\t\t %.6lf seconds\n\n", average_time());
+    //printf(";%.3lf",1000*average_time());
 
     /* print_array (X, N) ; */
 
@@ -204,5 +204,4 @@ int main(int argc, char **argv)
     free(X);
     free(Y);
     free(Z);
-    printf("\n");
 }

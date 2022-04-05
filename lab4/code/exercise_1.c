@@ -26,33 +26,41 @@
 void lbm_comm_init_ex1(lbm_comm_t * comm, int total_width, int total_height)
 {
 	//
-	// TODO: calculate the splitting parameters for the current task.
+	// DONE: calculate the splitting parameters for the current task.
 	//
 	// HINT: You can look in exercise_0.c to get an example for the sequential case.
 	//
 
-	// TODO: calculate the number of tasks along X axis and Y axis.
-	comm->nb_x = -1;
-	comm->nb_y = -1;
+	//get infos
+	int rank;
+	int comm_size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-	// TODO: calculate the current task position in the splitting
-	comm->rank_x = -1;
-	comm->rank_y = -1;
+	// DONE: calculate the number of tasks along X axis and Y axis.
+	comm->nb_x = comm_size;
+	comm->nb_y = 1;
 
-	// TODO : calculate the local sub-domain size (do not forget the 
+	// DONE: calculate the current task position in the splitting
+	comm->rank_x = rank;
+	comm->rank_y = 0;
+
+	// DONE : calculate the local sub-domain size (do not forget the 
 	//        ghost cells). Use total_width & total_height as starting 
 	//        point.
-	comm->width = -1;
-	comm->height = -1;
+	comm->width = (total_width/comm_size) + 2;
+	comm->height = total_height + 2;
 
-	// TODO : calculate the absolute position in the global mesh.
+	// DONE : calculate the absolute position in the global mesh.
 	//        without accounting the ghost cells
 	//        (used to setup the obstable & initial conditions).
-	comm->x = -1;
-	comm->y = -1;
+	comm->x = rank*(comm->width-2);
+	comm->y = 0;
 
 	//if debug print comm
-	//lbm_comm_print(comm);
+	#ifndef NDEBUG
+	lbm_comm_print(comm);
+	#endif
 }
 
 /****************************************************/
@@ -70,4 +78,22 @@ void lbm_comm_ghost_exchange_ex1(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	//example to access cell
 	//double * cell = lbm_mesh_get_cell(mesh, local_x, local_y);
 	//double * cell = lbm_mesh_get_cell(mesh, comm->width - 1, 0);
+
+	double* send_left = lbm_mesh_get_cell(mesh,1,0);
+	double* recv_left = lbm_mesh_get_cell(mesh,0,0);
+
+	double* send_right = lbm_mesh_get_cell(mesh,comm->width-2,0);
+	double* recv_right = lbm_mesh_get_cell(mesh,comm->width-1,0);
+
+	MPI_Status status;
+	//double* buffer = malloc(9*comm->height);
+	
+	if(comm->rank_x!=0) MPI_Recv(recv_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
+	if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
+
+	if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
+	if(comm->rank_x!=0) MPI_Send(send_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
+	
+
+
 }

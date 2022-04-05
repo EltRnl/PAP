@@ -34,7 +34,7 @@ void lbm_comm_init_ex2(lbm_comm_t * comm, int total_width, int total_height)
 void lbm_comm_ghost_exchange_ex2(lbm_comm_t * comm, lbm_mesh_t * mesh)
 {
 	//
-	// TODO: Implement the 1D communication with blocking MPI functions using
+	// DONE: Implement the 1D communication with blocking MPI functions using
 	//       odd/even communications.
 	//
 	// To be used:
@@ -46,4 +46,26 @@ void lbm_comm_ghost_exchange_ex2(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	//example to access cell
 	//double * cell = lbm_mesh_get_cell(mesh, local_x, local_y);
 	//double * cell = lbm_mesh_get_cell(mesh, comm->width - 1, 0);
+
+	double* send_left = lbm_mesh_get_cell(mesh,1,0);
+	double* recv_left = lbm_mesh_get_cell(mesh,0,0);
+
+	double* send_right = lbm_mesh_get_cell(mesh,comm->width-2,0);
+	double* recv_right = lbm_mesh_get_cell(mesh,comm->width-1,0);
+
+	MPI_Status status;
+	
+	if(comm->rank_x%2==0){
+		if(comm->rank_x!=0) MPI_Recv(recv_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
+		if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
+
+		if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
+		if(comm->rank_x!=0) MPI_Send(send_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
+	}else{
+		if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
+		MPI_Recv(recv_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
+
+		MPI_Send(send_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
+		if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
+	}
 }

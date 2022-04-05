@@ -67,7 +67,7 @@ void lbm_comm_init_ex1(lbm_comm_t * comm, int total_width, int total_height)
 void lbm_comm_ghost_exchange_ex1(lbm_comm_t * comm, lbm_mesh_t * mesh)
 {
 	//
-	// TODO: Implement the 1D communication with blocking MPI functions (MPI_Send & MPI_Recv)
+	// DONE: Implement the 1D communication with blocking MPI functions (MPI_Send & MPI_Recv)
 	//
 	// To be used:
 	//    - DIRECTIONS: the number of doubles composing a cell
@@ -93,7 +93,4 @@ void lbm_comm_ghost_exchange_ex1(lbm_comm_t * comm, lbm_mesh_t * mesh)
 
 	if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
 	if(comm->rank_x!=0) MPI_Send(send_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
-	
-
-
 }

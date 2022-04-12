@@ -56,16 +56,16 @@ void lbm_comm_ghost_exchange_ex2(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	MPI_Status status;
 	
 	if(comm->rank_x%2==0){
-		if(comm->rank_x!=0) MPI_Recv(recv_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
-		if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
+		if(comm->rank_x!=0) MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
+		if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
 
-		if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
-		if(comm->rank_x!=0) MPI_Send(send_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
+		if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
+		if(comm->rank_x!=0) MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
 	}else{
-		if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
-		MPI_Recv(recv_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
+		if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
+		MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
 
-		MPI_Send(send_left,9*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
-		if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,9*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
+		MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
+		if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
 	}
 }

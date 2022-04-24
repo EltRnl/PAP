@@ -24,6 +24,7 @@
 #include "src/lbm_struct.h"
 #include "src/exercises.h"
 #include <math.h>
+#include <assert.h>
 
 int find_factor(int n){
 	int sqr = sqrt(n);
@@ -55,7 +56,7 @@ void lbm_comm_init_ex4(lbm_comm_t * comm, int total_width, int total_height)
 		comm->nb_y = find_factor(comm_size);
 		comm->nb_x = comm_size/comm->nb_y;
 	}
-	ASSERT(total_width%nb_x == 0 && total_height%nb_y == 0);
+	assert(total_width%comm->nb_x == 0 && total_height%comm->nb_y == 0);
 
 	// DONE: calculate the current task position in the splitting
 	comm->rank_x = rank%comm->nb_x;

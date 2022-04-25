@@ -95,6 +95,20 @@ void lbm_comm_release_ex4(lbm_comm_t * comm)
 }
 
 /****************************************************/
+int rank_from_xy(int x, int y, int w, int h)
+{
+	if(x<0 || x>=w || y<0 || y>=h)
+		return -1;
+	return y * w + x;
+}
+
+void copy_cell(double * source, double * target){
+	for(int i=0; i<DIRECTIONS; i++){
+		target[i] = source[i];
+	}
+}
+
+/****************************************************/
 void lbm_comm_ghost_exchange_ex4(lbm_comm_t * comm, lbm_mesh_t * mesh)
 {
 	//
@@ -123,7 +137,16 @@ void lbm_comm_ghost_exchange_ex4(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	//   - implement top/bottom communication (non contiguous)
 	//   - implement diagonal communications
 
-	// Send left and right
+	/************* Calculating neighboors rank *************/
+
+	int n_l = rank_from_xy(comm->rank_x-1,comm->rank_y,comm->nb_x,comm->nb_y);
+	int n_r = rank_from_xy(comm->rank_x+1,comm->rank_y,comm->nb_x,comm->nb_y);
+	int n_u = rank_from_xy(comm->rank_x,comm->rank_y-1,comm->nb_x,comm->nb_y);
+	int n_d = rank_from_xy(comm->rank_x,comm->rank_y+1,comm->nb_x,comm->nb_y);
+
+	/************* Sending left and right *************/
+
+	// Getting data pointers
 	double* send_left = lbm_mesh_get_cell(mesh,1,0);
 	double* recv_left = lbm_mesh_get_cell(mesh,0,0);
 
@@ -132,17 +155,32 @@ void lbm_comm_ghost_exchange_ex4(lbm_comm_t * comm, lbm_mesh_t * mesh)
 
 	MPI_Status status;
 	
-	if(comm->rank_x!=0) MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD,&status);
-	if(comm->rank_x!=comm->nb_x-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD);
+	if(n_l!=-1) MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,MPI_COMM_WORLD,&status);
+	if(n_r!=-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,MPI_COMM_WORLD);
 
-	if(comm->rank_x!=comm->nb_x-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x+1,0,MPI_COMM_WORLD,&status);
-	if(comm->rank_x!=0) MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,comm->rank_x-1,0,MPI_COMM_WORLD);
+	if(n_r!=-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,MPI_COMM_WORLD,&status);
+	if(n_l!=-1) MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,MPI_COMM_WORLD);
 
-	// Send up and down
-	for(int i=0; i<comm->width*DIRECTIONS; i+=DIRECTIONS){
-		comm->buffer_send_up[i] = *lbm_mesh_get_cell(mesh,i/DIRECTIONS,0);
-		comm->buffer_send_down[i] =  *lbm_mesh_get_cell(mesh,i/DIRECTIONS,comm->height-1);
+
+	/************* Sending up and down *************/
+	
+	// Filling buffers with our data 
+
+	for(int i=0; i<comm->width; i++){
+		if(n_u!=-1) copy_cell(lbm_mesh_get_cell(mesh,i,1),comm->buffer_send_up+(i*DIRECTIONS));
+		if(n_d!=-1) copy_cell(lbm_mesh_get_cell(mesh,i,comm->height-2),comm->buffer_send_down+(i*DIRECTIONS));
 	}
 
+	if(n_u!=-1) MPI_Recv(comm->buffer_recv_up,DIRECTIONS*comm->width,MPI_DOUBLE,n_u,0,MPI_COMM_WORLD,&status);
+	if(n_d!=-1) MPI_Send(comm->buffer_send_down,DIRECTIONS*comm->width,MPI_DOUBLE,n_d,0,MPI_COMM_WORLD);
+
+
+	if(n_d!=-1) MPI_Recv(comm->buffer_recv_down,DIRECTIONS*comm->width,MPI_DOUBLE,n_d,0,MPI_COMM_WORLD,&status);
+	if(n_u!=-1) MPI_Send(comm->buffer_send_up,DIRECTIONS*comm->width,MPI_DOUBLE,n_u,0,MPI_COMM_WORLD);
+
+	for(int i=0; i<comm->width; i++){
+		if(n_u!=-1) copy_cell(comm->buffer_recv_up+(i*DIRECTIONS),lbm_mesh_get_cell(mesh,i,0));
+		if(n_d!=-1) copy_cell(comm->buffer_recv_down+(i*DIRECTIONS),lbm_mesh_get_cell(mesh,i,comm->height-1));
+	}
 
 }

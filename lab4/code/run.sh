@@ -18,6 +18,10 @@ case $1 in
     verif)
         ./display --gnuplot $2.raw 3 | md5sum -c ref_ex0.md5
         ;;
+    clean)
+        make clean
+        rm *.gif *.raw
+        ;;
     *)
         echo "Usage :"
         printf "\t lbm <nb_exo>\n\t ↳ makes and run lbm with the exercice number given as argument\n"

@@ -32,6 +32,9 @@ void lbm_comm_init_ex5(lbm_comm_t * comm, int total_width, int total_height)
 	lbm_comm_init_ex4(comm, total_width, total_height);
 
 	//TODO: create MPI type for non contiguous side in comm->type.
+
+	MPI_Type_vector(comm->width, 1, comm->height, MPI_DOUBLE, &comm->type);
+	MPI_Type_commit(&comm->type);
 }
 
 /****************************************************/
@@ -41,6 +44,7 @@ void lbm_comm_release_ex5(lbm_comm_t * comm)
 	lbm_comm_release_ex4(comm);
 
 	//TODO: release MPI type created in init.
+	MPI_Type_free(&comm->type);
 }
 
 /****************************************************/
@@ -71,4 +75,51 @@ void lbm_comm_ghost_exchange_ex5(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	//   - implement left/write communications
 	//   - implement top/bottom communication (non contiguous)
 	//   - implement diagonal communications
+
+	/************* Calculating neighboors rank *************/
+
+	int n_l = rank_from_xy(comm->rank_x-1,comm->rank_y,comm->nb_x,comm->nb_y);
+	int n_r = rank_from_xy(comm->rank_x+1,comm->rank_y,comm->nb_x,comm->nb_y);
+	int n_u = rank_from_xy(comm->rank_x,comm->rank_y-1,comm->nb_x,comm->nb_y);
+	int n_d = rank_from_xy(comm->rank_x,comm->rank_y+1,comm->nb_x,comm->nb_y);
+	//printf("Process (%d,%d)\n",n_u,n_d);
+
+	/************* Sending left and right *************/
+
+	// Getting data pointers
+	double* send_left = lbm_mesh_get_cell(mesh,1,0);
+	double* recv_left = lbm_mesh_get_cell(mesh,0,0);
+
+	double* send_right = lbm_mesh_get_cell(mesh,comm->width-2,0);
+	double* recv_right = lbm_mesh_get_cell(mesh,comm->width-1,0);
+
+	double* send_up = lbm_mesh_get_cell(mesh,0,1);
+	double* recv_up = lbm_mesh_get_cell(mesh,0,0);
+
+	double* send_down = lbm_mesh_get_cell(mesh,0,comm->height-2);
+	double* recv_down = lbm_mesh_get_cell(mesh,0,comm->height-1);
+
+	MPI_Status status;
+	
+	
+	if(n_l!=-1) MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,MPI_COMM_WORLD,&status);
+	if(n_r!=-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,MPI_COMM_WORLD);
+
+	if(n_r!=-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,MPI_COMM_WORLD,&status);
+	if(n_l!=-1) MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,MPI_COMM_WORLD);
+
+	/************* Sending up and down *************/
+
+	//printf("Process (%d,%d) before u/d\n", n_u,n_d);
+	if(n_u!=-1) MPI_Recv(recv_up,comm->width,comm->type,n_u,0,MPI_COMM_WORLD,&status);
+	//printf("Process (%d,%d) after recv u\n", n_u,n_d);
+	if(n_d!=-1) MPI_Send(send_down,comm->width,comm->type,n_d,0,MPI_COMM_WORLD);
+	//printf("Process (%d,%d) after send d", n_u,n_d);
+	
+
+	if(n_d!=-1) MPI_Recv(recv_down,comm->width,comm->type,n_d,0,MPI_COMM_WORLD,&status);
+	//printf("Process (%d,%d) after recv d", n_u,n_d);
+	if(n_u!=-1) MPI_Send(send_up,comm->width,comm->type,n_u,0,MPI_COMM_WORLD);
+	//printf("Process (%d,%d) after send u", n_u,n_d);
+	
 }

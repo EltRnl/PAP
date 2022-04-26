@@ -23,6 +23,7 @@
 /****************************************************/
 #include "src/lbm_struct.h"
 #include "src/exercises.h"
+#include <stdbool.h>
 #include <math.h>
 #include <assert.h>
 
@@ -41,26 +42,29 @@ void lbm_comm_init_ex4(lbm_comm_t * comm, int total_width, int total_height)
 	//
 	// DONE: calculate the splitting parameters for the current task.
 	//
-
 	//get infos
 	int rank;
-	int comm_size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	int comm_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
 	// DONE: calculate the number of tasks along X axis and Y axis.
-	if(total_width<total_height){
-		comm->nb_x = find_factor(comm_size);
-		comm->nb_y = comm_size/comm->nb_x;
-	}else{
-		comm->nb_y = find_factor(comm_size);
-		comm->nb_x = comm_size/comm->nb_y;
-	}
+	int dims[2] = {0, 0};
+    MPI_Dims_create(comm_size, 2, dims);
+    int periods[2] = {false, false};
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, false, &comm->communicator);
+ 
+	comm->nb_x = dims[0];
+	comm->nb_y = dims[1];
+
 	assert(total_width%comm->nb_x == 0 && total_height%comm->nb_y == 0);
 
 	// DONE: calculate the current task position in the splitting
-	comm->rank_x = rank%comm->nb_x;
-	comm->rank_y = rank/comm->nb_x;
+    int my_coords[2];
+    MPI_Cart_coords(comm->communicator, rank, 2, my_coords);
+
+	comm->rank_x = my_coords[0];
+	comm->rank_y = my_coords[1];
 
 	// DONE : calculate the local sub-domain size (do not forget the 
 	//        ghost cells). Use total_width & total_height as starting 
@@ -80,7 +84,8 @@ void lbm_comm_init_ex4(lbm_comm_t * comm, int total_width, int total_height)
 	comm->buffer_recv_up=malloc(sizeof(double)*comm->width*DIRECTIONS); 
 	comm->buffer_send_down=malloc(sizeof(double)*comm->width*DIRECTIONS); 
 	comm->buffer_send_up=malloc(sizeof(double)*comm->width*DIRECTIONS);
-	
+
+	printf("[%d] : (%d,%d) / (%d,%d) / (%d,%d) / (%d,%d)\n",rank,comm->nb_x,comm->nb_y,comm->rank_x,comm->rank_y,comm->width,comm->height,comm->x,comm->y);
 	//if debug print comm
 	//lbm_comm_print(comm);
 }

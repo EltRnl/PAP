@@ -101,13 +101,6 @@ void lbm_comm_release_ex4(lbm_comm_t * comm)
 }
 
 /****************************************************/
-int rank_from_xy(int x, int y, int w, int h)
-{
-	if(x<0 || x>=w || y<0 || y>=h)
-		return -1;
-	return y * w + x;
-}
-
 void copy_cell(double * source, double * target){
 	for(int i=0; i<DIRECTIONS; i++){
 		target[i] = source[i];

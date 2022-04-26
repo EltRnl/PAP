@@ -86,11 +86,9 @@ void lbm_comm_ghost_exchange_ex5(lbm_comm_t * comm, lbm_mesh_t * mesh)
 
 	/************* Calculating neighboors rank *************/
 
-	int n_l = rank_from_coords(comm->rank_x-1,comm->rank_y,comm->nb_x,comm->nb_y);
-	int n_r = rank_from_coords(comm->rank_x+1,comm->rank_y,comm->nb_x,comm->nb_y);
-	int n_u = rank_from_coords(comm->rank_x,comm->rank_y-1,comm->nb_x,comm->nb_y);
-	int n_d = rank_from_coords(comm->rank_x,comm->rank_y+1,comm->nb_x,comm->nb_y);
-	//printf("Process (%d,%d)\n",n_u,n_d);
+	int n_l, n_r, n_u, n_d; 
+	MPI_Cart_shift(comm->communicator, 0, 1, &n_l, &n_r);
+	MPI_Cart_shift(comm->communicator, 1, -1, &n_d, &n_u);
 
 	/************* Sending left and right *************/
 
@@ -110,24 +108,19 @@ void lbm_comm_ghost_exchange_ex5(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	MPI_Status status;
 	
 	
-	if(n_l!=-1) MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,MPI_COMM_WORLD,&status);
-	if(n_r!=-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,MPI_COMM_WORLD);
+	if(n_l!=-1) MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,comm->communicator,&status);
+	if(n_r!=-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,comm->communicator);
 
-	if(n_r!=-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,MPI_COMM_WORLD,&status);
-	if(n_l!=-1) MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,MPI_COMM_WORLD);
+	if(n_r!=-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,comm->communicator,&status);
+	if(n_l!=-1) MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,comm->communicator);
 
 	/************* Sending up and down *************/
 
-	//printf("Process (%d,%d) before u/d\n", n_u,n_d);
-	if(n_u!=-1) MPI_Recv(recv_up,1,comm->type,n_u,0,MPI_COMM_WORLD,&status);
-	//printf("Process (%d,%d) after recv u\n", n_u,n_d);
-	if(n_d!=-1) MPI_Send(send_down,1,comm->type,n_d,0,MPI_COMM_WORLD);
-	//printf("Process (%d,%d) after send d", n_u,n_d);
+	if(n_u!=-1) MPI_Recv(recv_up,1,comm->type,n_u,0,comm->communicator,&status);
+	if(n_d!=-1) MPI_Send(send_down,1,comm->type,n_d,0,comm->communicator);
 	
 
-	if(n_d!=-1) MPI_Recv(recv_down,1,comm->type,n_d,0,MPI_COMM_WORLD,&status);
-	//printf("Process (%d,%d) after recv d", n_u,n_d);
-	if(n_u!=-1) MPI_Send(send_up,1,comm->type,n_u,0,MPI_COMM_WORLD);
-	//printf("Process (%d,%d) after send u", n_u,n_d);
+	if(n_d!=-1) MPI_Recv(recv_down,1,comm->type,n_d,0,comm->communicator,&status);
+	if(n_u!=-1) MPI_Send(send_up,1,comm->type,n_u,0,comm->communicator);
 	
 }

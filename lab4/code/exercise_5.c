@@ -108,19 +108,19 @@ void lbm_comm_ghost_exchange_ex5(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	MPI_Status status;
 	
 	
-	if(n_l!=-1) MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,comm->communicator,&status);
-	if(n_r!=-1) MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,comm->communicator);
+	MPI_Recv(recv_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,comm->communicator,&status);
+	MPI_Send(send_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,comm->communicator);
 
-	if(n_r!=-1) MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,comm->communicator,&status);
-	if(n_l!=-1) MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,comm->communicator);
+	MPI_Recv(recv_right,DIRECTIONS*comm->height,MPI_DOUBLE,n_r,0,comm->communicator,&status);
+	MPI_Send(send_left,DIRECTIONS*comm->height,MPI_DOUBLE,n_l,0,comm->communicator);
 
 	/************* Sending up and down *************/
 
-	if(n_u!=-1) MPI_Recv(recv_up,1,comm->type,n_u,0,comm->communicator,&status);
-	if(n_d!=-1) MPI_Send(send_down,1,comm->type,n_d,0,comm->communicator);
+	MPI_Recv(recv_up,1,comm->type,n_u,0,comm->communicator,&status);
+	MPI_Send(send_down,1,comm->type,n_d,0,comm->communicator);
 	
 
-	if(n_d!=-1) MPI_Recv(recv_down,1,comm->type,n_d,0,comm->communicator,&status);
-	if(n_u!=-1) MPI_Send(send_up,1,comm->type,n_u,0,comm->communicator);
+	MPI_Recv(recv_down,1,comm->type,n_d,0,comm->communicator,&status);
+	MPI_Send(send_up,1,comm->type,n_u,0,comm->communicator);
 	
 }

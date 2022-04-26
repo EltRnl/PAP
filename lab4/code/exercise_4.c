@@ -169,12 +169,12 @@ void lbm_comm_ghost_exchange_ex4(lbm_comm_t * comm, lbm_mesh_t * mesh)
 		if(n_d!=-1) copy_cell(lbm_mesh_get_cell(mesh,i,comm->height-2),comm->buffer_send_down+(i*DIRECTIONS));
 	}
 
-	if(n_u!=-1) MPI_Recv(comm->buffer_recv_up,DIRECTIONS*comm->width,MPI_DOUBLE,n_u,0,comm->communicator,&status);
-	if(n_d!=-1) MPI_Send(comm->buffer_send_down,DIRECTIONS*comm->width,MPI_DOUBLE,n_d,0,comm->communicator);
+	MPI_Recv(comm->buffer_recv_up,DIRECTIONS*comm->width,MPI_DOUBLE,n_u,0,comm->communicator,&status);
+	MPI_Send(comm->buffer_send_down,DIRECTIONS*comm->width,MPI_DOUBLE,n_d,0,comm->communicator);
 
 
-	if(n_d!=-1) MPI_Recv(comm->buffer_recv_down,DIRECTIONS*comm->width,MPI_DOUBLE,n_d,0,comm->communicator,&status);
-	if(n_u!=-1) MPI_Send(comm->buffer_send_up,DIRECTIONS*comm->width,MPI_DOUBLE,n_u,0,comm->communicator);
+	MPI_Recv(comm->buffer_recv_down,DIRECTIONS*comm->width,MPI_DOUBLE,n_d,0,comm->communicator,&status);
+	MPI_Send(comm->buffer_send_up,DIRECTIONS*comm->width,MPI_DOUBLE,n_u,0,comm->communicator);
 
 	for(int i=0; i<comm->width; i++){
 		if(n_u!=-1) copy_cell(comm->buffer_recv_up+(i*DIRECTIONS),lbm_mesh_get_cell(mesh,i,0));

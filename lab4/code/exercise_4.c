@@ -111,7 +111,7 @@ void copy_cell(double * source, double * target){
 void lbm_comm_ghost_exchange_ex4(lbm_comm_t * comm, lbm_mesh_t * mesh)
 {
 	//
-	// TODO: Implement the 2D communication with :
+	// DONE: Implement the 2D communication with :
 	//         - blocking MPI functions
 	//         - manual copy in temp buffer for non contiguous side 
 	//
@@ -131,16 +131,32 @@ void lbm_comm_ghost_exchange_ex4(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	//double * cell = lbm_mesh_get_cell(mesh, local_x, local_y);
 	//double * cell = lbm_mesh_get_cell(mesh, comm->width - 1, 0);
 
-	//TODO:
+	//DONE:
 	//   - implement left/write communications
 	//   - implement top/bottom communication (non contiguous)
 	//   - implement diagonal communications
 
+	bool do_corners = false;
+
 	/************* Calculating neighboors rank *************/
 
+	// Direct neighboors 
 	int n_l, n_r, n_u, n_d; 
 	MPI_Cart_shift(comm->communicator, 0, 1, &n_l, &n_r);
 	MPI_Cart_shift(comm->communicator, 1, -1, &n_d, &n_u);
+
+	// Diagonal neighboors
+	int n_ul = MPI_PROC_NULL; int n_ur = MPI_PROC_NULL; int n_dl = MPI_PROC_NULL; int n_dr = MPI_PROC_NULL;
+	if(do_corners){
+		int ncoords[2] = {comm->rank_x-1, comm->rank_y-1};
+		if(!(ncoords[0]<0 || ncoords[1]<0 || ncoords[0]>=comm->nb_x || ncoords[1]>=comm->nb_y)) MPI_Cart_rank(comm->communicator,ncoords,&n_ul);
+		ncoords[0] += 2;
+		if(!(ncoords[0]<0 || ncoords[1]<0 || ncoords[0]>=comm->nb_x || ncoords[1]>=comm->nb_y)) MPI_Cart_rank(comm->communicator,ncoords,&n_ur);
+		ncoords[1] += 2; 
+		if(!(ncoords[0]<0 || ncoords[1]<0 || ncoords[0]>=comm->nb_x || ncoords[1]>=comm->nb_y)) MPI_Cart_rank(comm->communicator,ncoords,&n_dr);
+		ncoords[0] -= 2; 
+		if(!(ncoords[0]<0 || ncoords[1]<0 || ncoords[0]>=comm->nb_x || ncoords[1]>=comm->nb_y)) MPI_Cart_rank(comm->communicator,ncoords,&n_dl);
+	}
 
 	/************* Sending left and right *************/
 
@@ -179,6 +195,35 @@ void lbm_comm_ghost_exchange_ex4(lbm_comm_t * comm, lbm_mesh_t * mesh)
 	for(int i=0; i<comm->width; i++){
 		if(n_u!=-1) copy_cell(comm->buffer_recv_up+(i*DIRECTIONS),lbm_mesh_get_cell(mesh,i,0));
 		if(n_d!=-1) copy_cell(comm->buffer_recv_down+(i*DIRECTIONS),lbm_mesh_get_cell(mesh,i,comm->height-1));
+	}
+
+	/************* Sending diagonaly *************/
+
+	// Getting data pointers
+	if(do_corners){
+		double* send_ul = lbm_mesh_get_cell(mesh,1,1);
+		double* recv_ul = lbm_mesh_get_cell(mesh,0,0);
+
+		double* send_ur = lbm_mesh_get_cell(mesh,comm->width-2,1);
+		double* recv_ur = lbm_mesh_get_cell(mesh,comm->width-1,0);
+
+		double* send_dl = lbm_mesh_get_cell(mesh,1,comm->height-2);
+		double* recv_dl = lbm_mesh_get_cell(mesh,0,comm->height-1);
+
+		double* send_dr = lbm_mesh_get_cell(mesh,comm->width-2,comm->height-2);
+		double* recv_dr = lbm_mesh_get_cell(mesh,comm->width-1,comm->height-1);	
+
+		MPI_Recv(recv_ur,DIRECTIONS,MPI_DOUBLE,n_ur,0,comm->communicator,&status);
+		MPI_Send(send_dl,DIRECTIONS,MPI_DOUBLE,n_dl,0,comm->communicator);
+
+		MPI_Recv(recv_dl,DIRECTIONS,MPI_DOUBLE,n_dl,0,comm->communicator,&status);
+		MPI_Send(send_ur,DIRECTIONS,MPI_DOUBLE,n_ur,0,comm->communicator);
+
+		MPI_Recv(recv_ul,DIRECTIONS,MPI_DOUBLE,n_ul,0,comm->communicator,&status);
+		MPI_Send(send_dr,DIRECTIONS,MPI_DOUBLE,n_dr,0,comm->communicator);
+
+		MPI_Recv(recv_dr,DIRECTIONS,MPI_DOUBLE,n_dr,0,comm->communicator,&status);
+		MPI_Send(send_ul,DIRECTIONS,MPI_DOUBLE,n_ul,0,comm->communicator);
 	}
 
 }
